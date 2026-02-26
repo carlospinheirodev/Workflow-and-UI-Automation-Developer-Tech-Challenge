@@ -1,0 +1,1 @@
+Please read the "Technical Assessment Details" PDF for the 2 Challenges that must be complete using n8n and the hubspot playground. 
