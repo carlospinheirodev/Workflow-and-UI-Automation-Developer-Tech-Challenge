@@ -1,0 +1,375 @@
+{
+  "name": "DESTIFY",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "destify/call-transcription",
+        "authentication": "basicAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -128,
+        0
+      ],
+      "id": "fe3669cb-6f30-46fe-b237-3627b61a5d9f",
+      "name": "Webhook",
+      "webhookId": "d076f834-fa06-406c-9a61-75dabeb03aa8",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "qF8mOWScjdbNkE21",
+          "name": "DESTIFY"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "31bb3fbe-500a-4343-84fe-d7a58de971c4",
+              "name": "file_url",
+              "value": "https://drive.google.com/file/d/1xEQbwyJznnhLVNL2sBWqS6ievc28kIsz/view?usp=sharing",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        48,
+        0
+      ],
+      "id": "a65f290f-df2f-4cca-8b80-0d31a8811510",
+      "name": "formalization"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7af631c4-ff5b-416d-920e-246cae3999c4",
+              "leftValue": "={{ $binary.data.fileExtension }}",
+              "rightValue": "pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        400,
+        0
+      ],
+      "id": "1a6e028a-e6ee-4455-b1b1-6b16f1dafc8b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        -112
+      ],
+      "id": "188b207f-cf07-40bc-893a-1d5bb1d16577",
+      "name": "Extract PDF Content"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "69034126-1cb1-47c8-a5e5-65c7a29dcf63",
+              "name": "doc_text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        -112
+      ],
+      "id": "3bb514ee-b185-404f-b038-2fc97c1b0d9c",
+      "name": "Doc Text"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=## INPUT TEXT\n\n{{ JSON.stringify($json.doc_text) }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=## OBJECTIVE\n\nYou are a data extraction assistant. Your sole task is to analyze the provided text and extract specific travel lead information. Return **only** a valid JSON object — no explanations, no extra text, no markdown code blocks.\n\n## EXTRACTION RULES\n\n- Extract only what is explicitly stated or clearly implied in the text.\n- If a field cannot be determined, set its value to `null`.\n- For dropdown fields, you **must** map the extracted value to one of the allowed options listed below. If it doesn't match any option, return `null`.\n\n## FIELDS TO EXTRACT\n\n| Field | Type | Allowed Values / Format |\n|---|---|---|\n| `budget` | string (dropdown) | `\"economy\"`, `\"elevated\"`, `\"luxury\"` |\n| `lead_name` | string | Full name as written |\n| `lead_email` | string | Valid email format |\n| `representative` | string | Full name as written |\n| `destinations` | array of strings | e.g. `[\"Paris\", \"Rome\"]` |\n| `guest_count_range` | string (dropdown) | `\"< 10\"`, `\"10-20\"`, `\"20-50\"`, `\"50-100\"`, `\"100+\"` |\n| `adults_only` | boolean or null | `true`, `false`, or `null` |\n| `flights_needed` | boolean or null | `true`, `false`, or `null` |\n\n## REQUIRED OUTPUT FORMAT\n\nReturn strictly this JSON structure:\n\n```json\n{\n  \"budget\": \"economy\" | \"elevated\" | \"luxury\" | null,\n  \"lead_name\": \"string\" | null,\n  \"lead_email\": \"string\" | null,\n  \"representative\": \"string\" | null,\n  \"destinations\": [\"string\"] | [],\n  \"guest_count_range\": \"< 10\" | \"10-20\" | \"20-50\" | \"50-100\" | \"100+\" | null,\n  \"adults_only\": true | false | null,\n  \"flights_needed\": true | false | null\n}\n```"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        960,
+        -112
+      ],
+      "id": "ebc580fb-1b5d-41ad-9c45-91b35f27ec0a",
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        960,
+        64
+      ],
+      "id": "c6271102-348f-44ed-a937-fce279957022",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "JHTCtqdi2pybNYBc",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"budget\": \"economy | elevated | luxury | null\",\n  \"lead_name\": \"string | null\",\n  \"lead_email\": \"string | null\",\n  \"representative\": \"string | null\",\n  \"destinations\": [\"string\"],\n  \"guest_count_range\": \"< 10 | 10-20 | 20-50 | 50-100 | 100+ | null\",\n  \"adults_only\": true,\n  \"flights_needed\": true\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1136,
+        64
+      ],
+      "id": "a1ec5336-22ce-4709-abf5-b4c034e214d4",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"data\": {{ JSON.stringify($json.output) }}\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1312,
+        -208
+      ],
+      "id": "4a022a3e-b048-4808-bd7e-955d97429ebc",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": false,\n  \"error\": \"Webhook delivery failed: Input must be a PDF\"\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        608,
+        96
+      ],
+      "id": "8e86d9f8-865d-46a9-9f5d-ca1acc19fa4b",
+      "name": "Error Response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": false,\n  \"error\": \"Webhook delivery failed: Failed to process PDF\"\n}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1312,
+        -48
+      ],
+      "id": "1a490e24-8917-4e76-9d2f-45f9097cc7f4",
+      "name": "Error Response1"
+    },
+    {
+      "parameters": {
+        "url": "=https://drive.google.com/uc?export=download&id={{ $json.file_url.split('/d/')[1].split('/')[0] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        240,
+        0
+      ],
+      "id": "b14f5a81-ec2b-4411-ab9a-bed67b0d4210",
+      "name": "download PDF from Drive"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "formalization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "formalization": {
+      "main": [
+        [
+          {
+            "node": "download PDF from Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF Content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF Content": {
+      "main": [
+        [
+          {
+            "node": "Doc Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Doc Text": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "download PDF from Drive": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "1701710f-3544-4e09-b9f3-e68133b6c853",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2ddd17e2cc600d6d5fc75bd9a7bb28921ff874a57c3794aa804fc5cd6704bdf4"
+  },
+  "id": "KYj6WAp3rpUHnynr",
+  "tags": []
+}
