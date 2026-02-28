@@ -25,10 +25,17 @@ export const Playground: React.FC = () => {
         setError(result.error);
       }
     } catch (err) {
-      setError('Erro ao conectar com o n8n.');
+      setError('Failed to connect to n8n.');
     }
 
     setIsProcessing(false);
+  };
+
+  const triggerError = () => {
+    setResultData(null);
+    setProgress(0);
+    setIsProcessing(false);
+    setError('Input must be a PDF');
   };
 
   const cardProps = {
@@ -37,7 +44,7 @@ export const Playground: React.FC = () => {
       ? `Representative: ${resultData.representative}`
       : 'Key metrics and status for this account.',
     status: (error ? 'danger' : progress === 100 ? 'success' : isProcessing ? 'info' : 'warning') as any,
-    statusLabel: error ? 'failed' : progress === 100 ? 'Synced' : isProcessing ? 'Processing...' : 'Pending Sync',
+    statusLabel: error ? 'Failed' : progress === 100 ? 'Synced' : isProcessing ? 'Processing...' : 'Pending Sync',
     alertMessage: error
       ? error
       : progress === 100
@@ -55,6 +62,7 @@ export const Playground: React.FC = () => {
     progressLabel: isProcessing ? 'Workflow Action Progress' : error ? 'Sync Interrupted' : 'Last Sync Status',
     isProcessing,
     onTrigger: startSimulation,
+    onTriggerError: triggerError,
     webhookData: resultData,
   };
 

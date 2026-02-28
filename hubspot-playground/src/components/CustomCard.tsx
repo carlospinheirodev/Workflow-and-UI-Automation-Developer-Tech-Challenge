@@ -13,6 +13,7 @@ interface CustomCardProps {
   isProcessing?: boolean;
   onTrigger: () => void;
   webhookData?: any;
+  onTriggerError: () => void;
 }
 
 export const CustomCard: React.FC<CustomCardProps> = ({
@@ -27,6 +28,7 @@ export const CustomCard: React.FC<CustomCardProps> = ({
   isProcessing = false,
   onTrigger,
   webhookData,
+  onTriggerError,
 }) => {
   return (
     <Box padding="medium" border>
@@ -118,13 +120,23 @@ export const CustomCard: React.FC<CustomCardProps> = ({
         </Box>
 
         <Flex direction="row" gap="small" style={{ marginTop: '8px', paddingTop: '16px', borderTop: '1px solid var(--hs-grey-200)' }}>
-          <Button 
-            variant={ status == "danger" ? "danger" : "primary" }  
-            onClick={onTrigger} 
+          <Button
+            variant={status === 'danger' ? 'danger' : 'primary'}
+            onClick={onTrigger}
             disabled={isProcessing}
           >
-            {isProcessing ? 'Processing...' : status == 'danger'? 'Retry Sync' : 'Trigger Workflow Webhook Event'}
+            {isProcessing ? 'Processing...' : status === 'danger' ? 'Retry Sync' : 'Trigger Workflow Webhook Event'}
           </Button>
+
+          {status !== 'danger' && (
+            <Button
+              variant="secondary"
+              onClick={onTriggerError}
+              disabled={isProcessing}
+            >
+              Trigger Error State
+            </Button>
+          )}
         </Flex>
       </Stack>
     </Box>
