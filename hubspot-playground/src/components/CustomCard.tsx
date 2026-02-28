@@ -40,32 +40,48 @@ export const CustomCard: React.FC<CustomCardProps> = ({
         </Flex>
 
         {alertMessage && (
-          <Alert variant={status} title="Attention">
+          <Alert variant={status} title={ status == "danger" ? "Sync Error" : "Attention" }>
             {alertMessage}
           </Alert>
         )}
 
         {webhookData ? (
           <Box padding="medium" style={{ backgroundColor: 'var(--hs-grey-100)', borderRadius: '8px', border: '1px solid var(--hs-grey-200)' }}>
-             <Text variant="caption" style={{ fontWeight: 600, marginBottom: '12px', display: 'block' }}>RECEIVED WEBHOOK DATA</Text>
-             <Stack gap="small">
-                <Flex direction="row" justify="between">
-                   <Text variant="micro" style={{ fontWeight: 600 }}>Callback ID:</Text>
-                   <Text variant="micro">{webhookData.callbackId}</Text>
-                </Flex>
-                <Flex direction="row" justify="between">
-                   <Text variant="micro" style={{ fontWeight: 600 }}>Object ID:</Text>
-                   <Text variant="micro">{webhookData.object.objectId}</Text>
-                </Flex>
-                <Flex direction="row" justify="between">
-                   <Text variant="micro" style={{ fontWeight: 600 }}>Contact:</Text>
-                   <Text variant="micro">{webhookData.object.properties.firstname} {webhookData.object.properties.lastname}</Text>
-                </Flex>
-                <Flex direction="row" justify="between">
-                   <Text variant="micro" style={{ fontWeight: 600 }}>Email:</Text>
-                   <Text variant="micro">{webhookData.object.properties.email}</Text>
-                </Flex>
-             </Stack>
+            <Text variant="caption" style={{ fontWeight: 600, marginBottom: '12px', display: 'block' }}>RECEIVED WEBHOOK DATA</Text>
+            <Stack gap="small">
+              <Flex direction="row" justify="between">
+                <Text variant="micro" style={{ fontWeight: 600 }}>Budget:</Text>
+                <Text variant="micro">{webhookData.budget}</Text>
+              </Flex>
+              <Flex direction="row" justify="between">
+                <Text variant="micro" style={{ fontWeight: 600 }}>Lead Name:</Text>
+                <Text variant="micro">{webhookData.lead_name}</Text>
+              </Flex>
+              <Flex direction="row" justify="between">
+                <Text variant="micro" style={{ fontWeight: 600 }}>Lead Email:</Text>
+                <Text variant="micro">{webhookData.lead_email}</Text>
+              </Flex>
+              <Flex direction="row" justify="between">
+                <Text variant="micro" style={{ fontWeight: 600 }}>Representative:</Text>
+                <Text variant="micro">{webhookData.representative}</Text>
+              </Flex>
+              <Flex direction="row" justify="between">
+                <Text variant="micro" style={{ fontWeight: 600 }}>Destinations:</Text>
+                <Text variant="micro">{webhookData.destinations.join(', ')}</Text>
+              </Flex>
+              <Flex direction="row" justify="between">
+                <Text variant="micro" style={{ fontWeight: 600 }}>Guest Count:</Text>
+                <Text variant="micro">{webhookData.guest_count_range}</Text>
+              </Flex>
+              <Flex direction="row" justify="between">
+                <Text variant="micro" style={{ fontWeight: 600 }}>Adults Only:</Text>
+                <Text variant="micro">{webhookData.adults_only ? 'Yes' : 'No'}</Text>
+              </Flex>
+              <Flex direction="row" justify="between">
+                <Text variant="micro" style={{ fontWeight: 600 }}>Flights Needed:</Text>
+                <Text variant="micro">{webhookData.flights_needed ? 'Yes' : 'No'}</Text>
+              </Flex>
+            </Stack>
           </Box>
         ) : (
           <Box padding="medium" style={{ backgroundColor: 'var(--hs-grey-100)', borderRadius: '8px', border: '1px solid var(--hs-grey-200)' }}>
@@ -103,11 +119,11 @@ export const CustomCard: React.FC<CustomCardProps> = ({
 
         <Flex direction="row" gap="small" style={{ marginTop: '8px', paddingTop: '16px', borderTop: '1px solid var(--hs-grey-200)' }}>
           <Button 
-            variant="primary" 
+            variant={ status == "danger" ? "danger" : "primary" }  
             onClick={onTrigger} 
             disabled={isProcessing}
           >
-            {isProcessing ? 'Processing...' : 'Trigger Workflow Webhook Event'}
+            {isProcessing ? 'Processing...' : status == 'danger'? 'Retry Sync' : 'Trigger Workflow Webhook Event'}
           </Button>
         </Flex>
       </Stack>

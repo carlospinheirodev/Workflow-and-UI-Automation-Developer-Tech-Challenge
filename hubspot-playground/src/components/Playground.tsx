@@ -1,42 +1,61 @@
 import React, { useState } from 'react';
 import { CustomCard } from './CustomCard';
-import { simulateWorkflowAction } from '../utils/mockApi';
-import type { HubSpotWebhookEvent } from '../utils/mockApi';
+import type { N8NResponse } from '../utils/n8nApi';
+import { workflowAction } from '../utils/n8nApi';
 import './Playground.css';
 
 export const Playground: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [webhookData, setWebhookData] = useState<HubSpotWebhookEvent | null>(null);
+  const [resultData, setResultData] = useState<N8NResponse['data'] | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const startSimulation = async () => {
     setIsProcessing(true);
-    setWebhookData(null);
+    setResultData(null);
+    setError(null);
     setProgress(0);
-    
-    const data = await simulateWorkflowAction((p) => {
-      setProgress(p);
-    });
-    
-    setWebhookData(data);
+
+    try {
+      const result = await workflowAction((p) => setProgress(p));
+
+      if (result.success) {
+        setResultData(result.data);
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError('Erro ao conectar com o n8n.');
+    }
+
     setIsProcessing(false);
   };
 
   const cardProps = {
-    title: webhookData ? `${webhookData.object.properties.firstname}'s Overview` : 'Customer Overview',
-    description: webhookData ? `Action synced for ${webhookData.object.properties.company}` : 'Key metrics and status for this account.',
-    status: (progress === 100 ? 'success' : isProcessing ? 'info' : 'warning') as any,
-    statusLabel: progress === 100 ? 'Synced' : isProcessing ? 'Processing...' : 'Pending Sync',
-    alertMessage: progress === 100 ? 'Workflow action completed successfully!' : isProcessing ? 'Synchronizing with HubSpot CRM...' : undefined,
+    title: resultData ? `${resultData.lead_name}'s Overview` : 'Customer Overview',
+    description: resultData
+      ? `Representative: ${resultData.representative}`
+      : 'Key metrics and status for this account.',
+    status: (error ? 'danger' : progress === 100 ? 'success' : isProcessing ? 'info' : 'warning') as any,
+    statusLabel: error ? 'failed' : progress === 100 ? 'Synced' : isProcessing ? 'Processing...' : 'Pending Sync',
+    alertMessage: error
+      ? error
+      : progress === 100
+      ? 'Workflow action completed successfully!'
+      : isProcessing
+      ? 'Processing with n8n...'
+      : undefined,
     stats: [
-      { label: 'Monthly Revenue', value: webhookData ? '$4,500' : '$0' },
-      { label: 'Tickets Open', value: webhookData ? '0' : '-' },
+      { label: 'Budget', value: resultData?.budget ?? '-' },
+      { label: 'Destinations', value: resultData ? resultData.destinations.join(', ') : '-' },
+      { label: 'Guests', value: resultData?.guest_count_range ?? '-' },
+      { label: 'Adults Only', value: resultData ? (resultData.adults_only ? 'Yes' : 'No') : '-' },
     ],
     progressValue: progress,
-    progressLabel: isProcessing ? 'Workflow Action Progress' : 'Last Sync Status',
+    progressLabel: isProcessing ? 'Workflow Action Progress' : error ? 'Sync Interrupted' : 'Last Sync Status',
     isProcessing,
     onTrigger: startSimulation,
-    webhookData
+    webhookData: resultData,
   };
 
   return (
@@ -44,13 +63,10 @@ export const Playground: React.FC = () => {
       <main className="playground-stage">
         <div className="stage-content">
           <div className="card-wrapper">
-             <CustomCard {...cardProps} />
+            <CustomCard {...cardProps} />
           </div>
         </div>
       </main>
     </div>
   );
 };
-
-
-
